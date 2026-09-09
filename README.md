@@ -71,3 +71,7 @@ See [the complete CAT subset and fault recovery](docs/CAT.md).
 [Architecture and DSP](docs/ARCHITECTURE.md) ·
 [Validation and hardware acceptance](docs/TESTING.md) ·
 [MIT license](LICENSE)
+
+![Receiving FT8 signals at 20m with WSJT-X software](<images/Screenshot from 2026-09-09 15-30-44.png>)
+
+Receiving FT8 signals at 20m with WSJT-X software
