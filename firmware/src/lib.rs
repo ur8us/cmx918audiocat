@@ -1,6 +1,10 @@
 #![no_std]
 
+pub mod audio;
+pub mod cat;
 pub mod chip;
+pub mod dsp;
+mod dsp_tables;
 pub mod protocol;
 
 pub const RATES: [u32; 5] = [12_000, 24_000, 48_000, 96_000, 240_000];
