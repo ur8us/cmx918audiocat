@@ -10,10 +10,12 @@ RP2350, then decimated to 12 kHz audio. AM and FM are not implemented.
 Default tuning is **14.200000 MHz USB**. CAT accepts 1 Hz dial steps using
 100 Hz chip tuning plus digital fine tuning.
 
-**Status:** implemented with host tests and RP2350 builds. Not flashed or
-validated on hardware. The latest upstream report records working I2C but
-zero SPI samples on receiver `C1E27EA41B7ECCC3`; this needs a physical check
-before reception can be demonstrated. See [provenance](docs/PROVENANCE.md).
+**Status:** flashed and verified on RP2350A receiver `C1E27EA41B7ECCC3`.
+Linux audio/CDC, CAT control, and a 60-second 12 kHz capture pass. One initial
+I2C NACK recovered on retry. Generator tests at **14.074 MHz** pass for USB, LSB
+and fine tuning. A post-retune transient was fixed and retested; sustained
+operation is not yet qualified. See the
+[hardware report](docs/HARDWARE-2026-09-09.md) and [provenance](docs/PROVENANCE.md).
 
 ## Build
 

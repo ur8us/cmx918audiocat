@@ -2,7 +2,8 @@
 
 Rust 1.90.0 / Embassy, Cortex-M33. This fork replaces upstream vendor bulk
 I/Q USB with a UAC1 recording interface and CDC ACM CAT port. No external
-USB bridge or PC demodulator is required. Hardware operation is unverified.
+USB bridge or PC demodulator is required. Linux USB/CAT and short audio capture
+passed on RP2350A; see the [hardware report](../docs/HARDWARE-2026-09-09.md).
 
 ## Build
 
@@ -44,7 +45,9 @@ PLL-calibration configuration. Only the demodulated audio is decimated to
 The radio remains controlled over CDC independently of whether a PC records.
 
 Frequency and mode setters stop DMA, invalidate the audio queue, configure
-and verify the chip, reset DSP, restart DMA and unmute. The CAT state changes
+and verify the chip, reset DSP, restart DMA and unmute. The first 100 ms of
+captured samples are processed with their audio discarded for filter settling.
+The CAT state changes
 only after successful register programming/readback and unmute. SPI progress
 is checked separately; an absent stream faults after 500 ms. No-progress,
 PIO framing/FIFO, DMA, I2C and calibration failures leave silence and working
@@ -73,4 +76,5 @@ ELF for decoding. There are no per-sample logs. `DEFMT_LOG=debug` changes the
 compile-time filter. For an identified SWD probe, `probe-rs attach --chip
 RP235x --probe PROBE_ID artifacts/rp235xa/cmx918-audiocat.elf` attaches to
 already running firmware. `probe-rs run` would program hardware; no flashing
-was performed as part of this implementation.
+was performed during the initial implementation; the subsequent authorized
+hardware session used `run --verify` on the identified RP2350A receiver.

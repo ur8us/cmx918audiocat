@@ -36,9 +36,11 @@ The USB mock does not emulate bus timing or prove host-driver compatibility.
 
 ## Hardware acceptance still required
 
-No hardware was flashed or exercised for this fork. The latest upstream board
-has an unresolved lack of SPI samples; start with
-[its diagnostic report](upstream/REFLASH-2026-09-09.md).
+The [September 9 hardware session](HARDWARE-2026-09-09.md) flashed RP2350A and
+confirmed Linux audio/CDC, CAT, short PCM captures and generator RF checks at
+14.074 MHz in both sidebands. Full-range and sustained qualification remain
+outstanding. The older
+[upstream diagnostic](upstream/REFLASH-2026-09-09.md) is historical.
 
 1. Identify the receiver, board variant, flash, SWD probe and wiring. Confirm
    CMX918 CS/data/clock reach GP9/GP8/GP10 and the separate I2C GP0/GP1 bus.
