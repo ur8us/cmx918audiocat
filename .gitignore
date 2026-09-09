@@ -1,0 +1,23 @@
+# Rust build products; application Cargo.lock files should be committed.
+target/
+
+# Python environments and generated files.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Local capture output and downloaded reference material.
+/captures/
+/artifacts/
+/references/local/
+
+# OS metadata.
+.DS_Store
+Thumbs.db
