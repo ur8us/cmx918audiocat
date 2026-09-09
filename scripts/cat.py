@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Control a CMX918 USB Audio CAT receiver (requires pyserial)."""
 import argparse
+from decimal import Decimal, DecimalException
 
 
 def main():
@@ -8,10 +9,22 @@ def main():
     parser.add_argument('--list', action='store_true', help='list matching receivers, without opening ports')
     parser.add_argument('--port', help='explicit serial device path or COM port')
     parser.add_argument('--serial', help='USB receiver serial number')
-    parser.add_argument('--frequency', type=int, help='dial frequency in Hz, 150000..108000000')
-    parser.add_argument('--mode', choices=['USB', 'LSB'])
+    frequency = parser.add_mutually_exclusive_group()
+    frequency.add_argument('--frequency', '--fq', type=int, help='dial frequency in Hz, 150000..108000000')
+    frequency.add_argument('--mhz', help='dial frequency in MHz, e.g. 14.074')
+    parser.add_argument('--mode', type=str.upper, choices=['USB', 'LSB'])
     parser.add_argument('--retry', action='store_true', help='retry a faulted receiver configuration')
     args = parser.parse_args()
+    if args.mhz is not None:
+        try:
+            hz = Decimal(args.mhz) * 1_000_000
+            if not hz.is_finite() or hz != hz.to_integral_value():
+                raise ValueError('frequency must resolve to whole Hz')
+            if not 150000 <= hz <= 108000000:
+                raise ValueError('frequency must be between 0.15 and 108 MHz')
+            args.frequency = int(hz)
+        except (DecimalException, ValueError) as exc:
+            parser.error(str(exc))
     if args.frequency is not None and not 150000 <= args.frequency <= 108000000:
         parser.error('frequency must be between 150000 and 108000000 Hz')
     if args.port and args.serial:
@@ -36,7 +49,9 @@ def main():
             port.reset_input_buffer()
 
             def query(command, setter=''):
-                port.write((setter + command + ';').encode('ascii'))
+                payload = (setter + command + ';').encode('ascii')
+                if port.write(payload) != len(payload):
+                    raise RuntimeError('incomplete CAT command write')
                 reply = port.read_until(b';', size=64)
                 if reply == b'?;':
                     raise RuntimeError('receiver rejected command/configuration; query ZZST for fault details')

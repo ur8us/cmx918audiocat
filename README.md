@@ -48,11 +48,14 @@ Install pyserial into your Python environment to use the supplied CAT helper:
 ```sh
 python3 -m pip install pyserial
 python3 scripts/cat.py --list
+python3 scripts/cat.py --mhz 14.074 --mode USB
 python3 scripts/cat.py --frequency 7074123 --mode LSB
 ```
 
 It discovers only USB `c0de:0919` receivers; use `--serial` or `--port` if
-necessary. Without setters it reads frequency, mode and receiver status.
+necessary. `--frequency` (or `--fq`) uses integer Hz; `--mhz` accepts exact
+decimal MHz. Mode names are case-insensitive. Without setters it reads
+frequency, mode and receiver status.
 Alternatively send raw commands from a serial terminal:
 
 ```text
