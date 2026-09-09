@@ -165,13 +165,21 @@ impl Reply {
         r.bytes[29] = tuning.mode.digit();
         r
     }
-    pub fn status(ready: bool, error: u32, faults: u32, under: u32, over: u32) -> Self {
-        let mut r = Self::literal(b"ZZST0,00,0000000000,0000000000,0000000000;");
+    pub fn status(
+        ready: bool,
+        error: u32,
+        faults: u32,
+        under: u32,
+        over: u32,
+        usb_stalls: u32,
+    ) -> Self {
+        let mut r = Self::literal(b"ZZST0,00,0000000000,0000000000,0000000000,0000000000;");
         r.bytes[4] = b'0' + u8::from(ready);
         r.decimal(6, 2, error);
         r.decimal(9, 10, faults);
         r.decimal(20, 10, under);
         r.decimal(31, 10, over);
+        r.decimal(42, 10, usb_stalls);
         r
     }
 }
@@ -253,10 +261,10 @@ mod tests {
         let r = Reply::information(t);
         assert_eq!(r.len, 38);
         assert_eq!(&r.bytes[..r.len], b"IF00014200000     +00000000002000000 ;");
-        let r = Reply::status(true, 9, 123, 456, 789);
+        let r = Reply::status(true, 9, 123, 456, 789, 101);
         assert_eq!(
             &r.bytes[..r.len],
-            b"ZZST1,09,0000000123,0000000456,0000000789;"
+            b"ZZST1,09,0000000123,0000000456,0000000789,0000000101;"
         );
     }
 }

@@ -2,10 +2,9 @@
 //! DMA0 runs continuously into an aligned ring; no per-sample CPU interrupts.
 //! PIO0/SM0 and DMA0 are owned exclusively by this object for its full lifetime.
 
-use cmx918_firmware::{
-    Error, RingCursor,
-    protocol::{BLOCK_BYTES, SAMPLES},
-};
+use cmx918_firmware::{Error, RingCursor};
+pub const SAMPLES: usize = 48;
+pub const BLOCK_BYTES: usize = SAMPLES * 4;
 use core::{
     cell::UnsafeCell,
     ptr,

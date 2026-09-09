@@ -86,11 +86,11 @@ mod tests {
         let mut count = 0;
         for n in 0..12000 {
             let p = TAU * frequency * n as f64 / 24000.;
-            if let Some(v) = dsp.process((12000. * p.cos()) as i16, (12000. * p.sin()) as i16) {
-                if n > 1000 {
-                    energy += f64::from(v).powi(2);
-                    count += 1;
-                }
+            if let Some(v) = dsp.process((12000. * p.cos()) as i16, (12000. * p.sin()) as i16)
+                && n > 1000
+            {
+                energy += f64::from(v).powi(2);
+                count += 1;
             }
         }
         (energy / count as f64).sqrt()

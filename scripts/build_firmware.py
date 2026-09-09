@@ -15,14 +15,14 @@ def main():
     parser.add_argument("--variant", choices=("rp235xa", "rp235xb"), required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    subprocess.run(["cargo", "build", "--locked", "-p", "cmx918-firmware", "--bin", "cmx918-sdr",
+    subprocess.run(["cargo", "build", "--locked", "-p", "cmx918-firmware", "--bin", "cmx918-audiocat",
                     "--release", "--target", "thumbv8m.main-none-eabihf", "--features",
                     f"device,{args.variant}"], cwd=root, check=True)
     directory = root / "artifacts" / args.variant
     directory.mkdir(parents=True, exist_ok=True)
-    elf = directory / "cmx918-sdr.elf"
-    uf2 = directory / "cmx918-sdr.uf2"
-    shutil.copy2(root / "target/thumbv8m.main-none-eabihf/release/cmx918-sdr", elf)
+    elf = directory / "cmx918-audiocat.elf"
+    uf2 = directory / "cmx918-audiocat.uf2"
+    shutil.copy2(root / "target/thumbv8m.main-none-eabihf/release/cmx918-audiocat", elf)
     subprocess.run(["picotool", "uf2", "convert", str(elf), str(uf2)], check=True)
     subprocess.run(["picotool", "info", "-a", str(elf)], check=True)
     metadata = {"variant": args.variant, "flash_bytes": 4194304, "mcu_crystal_hz": 12000000,

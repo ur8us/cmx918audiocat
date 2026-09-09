@@ -5,7 +5,6 @@ pub mod cat;
 pub mod chip;
 pub mod dsp;
 mod dsp_tables;
-pub mod protocol;
 
 pub const RATES: [u32; 5] = [12_000, 24_000, 48_000, 96_000, 240_000];
 pub const PROFILES: [(u32, u32); 7] = [
@@ -23,7 +22,7 @@ pub const SYNTHETIC: u32 = 4;
 pub const XTAL_TRIM: u32 = 8;
 
 /// PIO shifts MSB-first wire data (I high16, Q low16) into a u32.
-/// USB stores each signed component little endian without changing any bits.
+/// Capture stores each signed component little endian without changing any bits.
 pub fn spi_word_to_iq(word: u32) -> [u8; 4] {
     word.rotate_left(16).to_le_bytes()
 }

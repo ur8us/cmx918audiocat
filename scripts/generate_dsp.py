@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate deterministic Q15 SSB FIR and NCO tables (Python stdlib only)."""
+import argparse
 import math
+import subprocess
 from pathlib import Path
 
 RATE = 24000
@@ -25,5 +27,16 @@ def generate():
     return out
 
 if __name__ == '__main__':
-    path = Path(__file__).resolve().parents[1] / 'firmware/src/dsp_tables.rs'
-    path.write_text(generate())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check', action='store_true')
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parents[1]
+    path = root / 'firmware/src/dsp_tables.rs'
+    formatted = subprocess.run(['rustfmt', '--edition', '2024'], input=generate(),
+                               text=True, capture_output=True, check=True, cwd=root).stdout
+    if args.check:
+        if path.read_text() != formatted:
+            raise SystemExit('DSP tables differ; run scripts/generate_dsp.py')
+        print('DSP tables match generator')
+    else:
+        path.write_text(formatted)
