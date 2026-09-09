@@ -36,7 +36,9 @@ The FIR is evaluated on every second input sample and therefore also filters
 before decimation to 12 kHz. Accumulators are 64-bit, with saturating 16-bit
 output. NCO mixing reserves headroom to avoid intermediate wrap. There is no
 AM/FM demodulation, audio AGC, squelch, volume control or transmit path.
-Filter history and NCO phase reset at every configuration boundary. Nominal
+Filter history and NCO phase reset at every configuration boundary. The first
+100 ms of captured input is processed but its audio is discarded to suppress
+chip/filter settling transients. This mute occurs only during configuration. Nominal
 FIR group delay is 5.33 ms; the audio FIFO targets 8 ms, plus capture and USB
 buffering. Actual latency and processor scheduling margin require measurement.
 

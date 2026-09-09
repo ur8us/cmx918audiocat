@@ -174,6 +174,7 @@ struct Radio {
     running: bool,
     error: u32,
     faults: u32,
+    settling_samples: usize,
 }
 impl Radio {
     fn new() -> Self {
@@ -183,6 +184,7 @@ impl Radio {
             running: false,
             error: 0,
             faults: 0,
+            settling_samples: 0,
         }
     }
     async fn apply(
@@ -199,6 +201,10 @@ impl Radio {
             .await
             .map_err(|_| Error::Timeout)??;
         self.dsp = Demodulator::new(tuning);
+        // Discard the first 100 ms while chip/DSP filters settle. Hardware
+        // testing with a strong carrier found clipping in the first 16 ms
+        // after retuning; priming the FIFO alone preserves those transients.
+        self.settling_samples = 2_400;
         capture.start()?;
         with_timeout(Duration::from_millis(100), chip.mute(false))
             .await
@@ -295,7 +301,10 @@ impl Radio {
             for sample in iq.chunks_exact(4) {
                 let i = i16::from_le_bytes([sample[0], sample[1]]);
                 let q = i16::from_le_bytes([sample[2], sample[3]]);
-                if let Some(value) = self.dsp.process(i, q) {
+                let audio = self.dsp.process(i, q);
+                if self.settling_samples != 0 {
+                    self.settling_samples -= 1;
+                } else if let Some(value) = audio {
                     pcm[used] = value;
                     used += 1;
                 }
