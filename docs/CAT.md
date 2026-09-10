@@ -30,13 +30,15 @@ defines the command framing and FA/MD/IF fields used by this subset.
 
 ## Frequency and failures
 
-The `vco-experiments` branch accepts 70,000–130,000,000 Hz in 1 Hz steps, with
+The firmware accepts 70,000–130,000,000 Hz in 1 Hz steps, with
 no claim of validated reception throughout that range. Nearest-100-Hz chip tuning plus
 an on-device NCO implements the requested dial. Crystal accuracy is not
 corrected automatically. Boot defaults to 14.200000 MHz USB and crystal trim
 code 8. Settings are volatile and not saved to flash.
 
-This branch forces the CMX918 HF LNA input by writing `$A2=0x02` after PLL/VCO
+**HF_IN is always selected for every supported frequency (70 kHz–130 MHz).**
+Connect all received signals to HF_IN, including LF/MF and VHF signals.
+The firmware forces the CMX918 HF LNA input by writing `$A2=0x02` after PLL/VCO
 calibration. Below 2 MHz it also sets the chip's Fc field to 2 MHz **after**
 calibrating the actual-frequency LO, retaining the IF polarity and checking
 that the PLL/divider registers have not changed. This selects the HF mixer/LO

@@ -8,7 +8,15 @@ RP2350 firmware derived from `../cmx918sdr`, using Rust and Embassy. It exposes:
 I/Q is captured from the CMX918 at 24 ksps, demodulated and filtered on the
 RP2350, then decimated to 12 kHz audio. AM and FM are not implemented.
 Default tuning is **14.200000 MHz USB**. CAT accepts 1 Hz dial steps using
-100 Hz chip tuning plus digital fine tuning.
+100 Hz chip tuning plus digital fine tuning over **70 kHz–130 MHz**.
+
+**HF_IN is always selected at every supported frequency**, including below
+2 MHz and in the VHF range. Connect the antenna or generator to the CMX918
+**HF input** for all tuning settings. The firmware also selects the HF mixer
+path below 2 MHz; see [frequency and input selection](docs/CAT.md).
+The extended range is experimental: PLL lock does not guarantee reception
+or sensitivity throughout it. [RF tests](docs/LF-HF-INPUT-CHECK-2026-09-10.md)
+confirmed reception at 474.2 kHz, 1.9 MHz, 2.1 MHz and 14.074 MHz.
 
 **Status:** flashed and verified on RP2350A receiver `C1E27EA41B7ECCC3`.
 Linux audio/CDC, CAT control, and a 60-second 12 kHz capture pass. One initial

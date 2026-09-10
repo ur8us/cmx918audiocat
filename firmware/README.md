@@ -44,7 +44,8 @@ PLL-calibration configuration. Only the demodulated audio is decimated to
 12 kHz. Capture continues with the audio interface closed, discarding output.
 The radio remains controlled over CDC independently of whether a PC records.
 
-On `vco-experiments`, HF_IN is forced for all frequencies. Below 2 MHz this
+HF_IN is always selected for every supported frequency, **70 kHz–130 MHz**.
+Connect the antenna or generator to HF_IN throughout this range. Below 2 MHz this
 requires an Fc routing override after actual-frequency PLL calibration;
 enabling the HF LNA alone is insufficient. See [CAT frequency behavior](../docs/CAT.md)
 and [hardware evidence](../docs/LF-HF-INPUT-CHECK-2026-09-10.md).

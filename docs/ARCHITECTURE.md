@@ -22,7 +22,8 @@ orientation must be rechecked on the actual board, including below 2 MHz
 where the driver changes LO injection. Wrong orientation exchanges USB/LSB.
 No undocumented conjugation correction has been assumed.
 
-The `vco-experiments` branch accepts 1 Hz steps over 70 kHz–130 MHz. Below
+The firmware accepts 1 Hz steps over 70 kHz–130 MHz and always selects HF_IN
+throughout that range. Below
 2 MHz the driver calibrates the requested LO first, then changes Fc to 2 MHz
 with the original IF sign to select HF mixer routing, without recalculating
 the PLL. It verifies that CTRL, N/F/R and programmed/active L are unchanged,
