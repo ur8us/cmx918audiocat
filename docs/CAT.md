@@ -37,7 +37,13 @@ corrected automatically. Boot defaults to 14.200000 MHz USB and crystal trim
 code 8. Settings are volatile and not saved to flash.
 
 This branch forces the CMX918 HF LNA input by writing `$A2=0x02` after PLL/VCO
-calibration. The 70 kHz and 130 MHz endpoints are PLL/input-routing experiments;
+calibration. Below 2 MHz it also sets the chip's Fc field to 2 MHz **after**
+calibrating the actual-frequency LO, retaining the IF polarity and checking
+that the PLL/divider registers have not changed. This selects the HF mixer/LO
+route. The CAT dial and DSP coarse/fine tuning remain the requested frequency;
+the final Fc register is a routing value, not an RF-frequency readback.
+See the [LF/HF hardware check](LF-HF-INPUT-CHECK-2026-09-10.md).
+The 70 kHz and 130 MHz endpoints are PLL/input-routing experiments;
 they are outside the published 150 kHz–108 MHz receiver specification.
 
 Setters acknowledge success by silence, following Kenwood convention. Send

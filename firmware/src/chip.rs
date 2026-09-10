@@ -7,8 +7,10 @@ use embedded_hal_async::{delay::DelayNs, i2c::I2c};
 
 pub const ADDRESS: u8 = 0x55;
 // UM918/2.0 p.65, $A2: RF_LNA_CTL_1. Bit 1 enables HF_IN; bit 0 enables
-// VHF_IN. This branch intentionally forces the HF path for every dial value.
+// VHF_IN. Below 2 MHz, Fc must also select the HF/VHF mixer/LO route.
 const FORCED_HF_INPUT: u8 = 0x02;
+// DS pp.10–12: LF/MF and HF/VHF have separate mixers, selected by band.
+const HF_ROUTING_HZ: u32 = 2_000_000;
 // D/918/2.0 Table 5: first 16 FIR1 and first 40 FIR2 coefficients.
 const FIR: [i16; 56] = [
     -13, -137, -56, 573, -60, -1824, 1284, 8378, -61, -173, 249, 562, -1113, -1190, 4998, 9744, 28,
@@ -142,6 +144,34 @@ impl<I: I2c, D: DelayNs> Chip<I, D> {
         if !locked {
             return Err(Error::Timeout);
         }
+        // DS p.28: writing Fc does not execute PLL changes. Below 2 MHz,
+        // retain the actual-frequency calibration above, then select the HF
+        // mixer/LO route with an HF-band Fc and the original IF polarity.
+        // Do not run PLL_CALC again with this routing value. CAT and DSP keep
+        // the actual dial/coarse frequency. See docs/LF-HF-INPUT-CHECK-2026-09-10.md.
+        let mut rf_fc = fc;
+        if config.frequency < HF_ROUTING_HZ {
+            // Guard CTRL, N/F/R, programmed L and active L against any implicit
+            // retune caused by changing Fc on this silicon revision.
+            let mut pll = [0; 11];
+            for (i, value) in pll.iter_mut().enumerate() {
+                *value = self.read(0x2a + i as u8).await?;
+            }
+            rf_fc = Config {
+                frequency: HF_ROUTING_HZ,
+                ..config
+            }
+            .carrier();
+            rf_fc[0] = (rf_fc[0] & 0x1f) | (fc[0] & 0xc0);
+            for (i, v) in rf_fc.iter().enumerate() {
+                self.write(0x08 + i as u8, *v).await?;
+            }
+            for (i, expected) in pll.iter().enumerate() {
+                if self.read(0x2a + i as u8).await? != *expected {
+                    return Err(Error::Readback);
+                }
+            }
+        }
         // The normal-mode automatic policy selects LF/MF, HF, or VHF from Fc.
         // Override that policy after PLL/VCO calibration for the VCO experiment.
         self.write(0xa2, FORCED_HF_INPUT).await?;
@@ -149,9 +179,9 @@ impl<I: I2c, D: DelayNs> Chip<I, D> {
             return Err(Error::Readback);
         }
         for (r, v) in [
-            (8, fc[0]),
-            (9, fc[1]),
-            (10, fc[2]),
+            (8, rf_fc[0]),
+            (9, rf_fc[1]),
+            (10, rf_fc[2]),
             (11, config.bandwidth_code()),
             (0x28, config.output_control(true)),
             (0x5a, 0),
@@ -171,6 +201,20 @@ impl<I: I2c, D: DelayNs> Chip<I, D> {
                 );
                 return Err(Error::Readback);
             }
+        }
+        #[cfg(target_arch = "arm")]
+        {
+            let status = self.read(0x06).await?;
+            let l_hi = self.read(0x33).await?;
+            let l_lo = self.read(0x34).await?;
+            let input = self.read(0xa2).await?;
+            defmt::info!(
+                "RF status={=u8:#x} L={} A2={=u8:#x} Fc={=[u8]:#x}",
+                status,
+                (u16::from(l_hi & 7) << 8) | u16::from(l_lo),
+                input,
+                rf_fc
+            );
         }
         Ok(())
     }
@@ -211,6 +255,7 @@ mod tests {
         writes: Vec<(u8, u8)>,
         busy: bool,
         fail: bool,
+        retune_on_route: bool,
     }
     impl Bus {
         fn new() -> Self {
@@ -219,6 +264,7 @@ mod tests {
                 writes: Vec::new(),
                 busy: false,
                 fail: false,
+                retune_on_route: false,
             };
             b.regs[6] = 8;
             b
@@ -245,6 +291,12 @@ mod tests {
                         for &value in &bytes[1..] {
                             self.regs[reg] = value;
                             self.writes.push((reg as u8, value));
+                            if self.retune_on_route
+                                && reg == 0x0a
+                                && self.regs[8..=10] == [0, 0x4e, 0x20]
+                            {
+                                self.regs[0x2c] ^= 1;
+                            }
                             if reg == 0x29 && !self.busy {
                                 self.regs[reg] = 0;
                             }
@@ -293,6 +345,42 @@ mod tests {
             assert_eq!(chip.bus.regs[0xa2], 0x02);
             chip.mute(false).await.unwrap();
             assert_eq!(chip.bus.regs[0x60], 0);
+        });
+    }
+    #[test]
+    fn lf_routing_preserves_calibrated_pll_and_actual_frequency_order() {
+        futures::executor::block_on(async {
+            let mut chip = Chip::new(Bus::new(), Delay);
+            let config = Config {
+                frequency: 474_200,
+                ..config()
+            };
+            chip.configure(config).await.unwrap();
+            let writes = &chip.bus.writes;
+            let calibration = writes.iter().position(|v| *v == (0x29, 5)).unwrap();
+            assert!(
+                writes[..calibration]
+                    .windows(3)
+                    .any(|v| v == [(8, 0), (9, 0x12), (10, 0x86)])
+            );
+            assert!(
+                writes[calibration + 1..]
+                    .windows(3)
+                    .any(|v| v == [(8, 0), (9, 0x4e), (10, 0x20)])
+            );
+            // Nothing after routing may recalculate the PLL or enter a new mode.
+            assert!(
+                !writes[calibration + 1..]
+                    .iter()
+                    .any(|(r, _)| *r == 0x29 || *r == 3)
+            );
+            assert_eq!(chip.bus.regs[0xa2], 2);
+            let mut bus = Bus::new();
+            bus.retune_on_route = true;
+            assert_eq!(
+                Chip::new(bus, Delay).configure(config).await,
+                Err(Error::Readback)
+            );
         });
     }
     #[test]

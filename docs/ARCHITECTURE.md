@@ -22,7 +22,14 @@ orientation must be rechecked on the actual board, including below 2 MHz
 where the driver changes LO injection. Wrong orientation exchanges USB/LSB.
 No undocumented conjugation correction has been assumed.
 
-The `vco-experiments` branch accepts 1 Hz steps over 70 kHz–130 MHz. The chip tunes to the nearest
+The `vco-experiments` branch accepts 1 Hz steps over 70 kHz–130 MHz. Below
+2 MHz the driver calibrates the requested LO first, then changes Fc to 2 MHz
+with the original IF sign to select HF mixer routing, without recalculating
+the PLL. It verifies that CTRL, N/F/R and programmed/active L are unchanged,
+as well as HF LNA selection and PLL lock. This hardware routing override does
+not change the software dial or DSP tuning arithmetic.
+
+The chip tunes to the nearest
 100 Hz; a 32-bit phase accumulator translates by the remaining −50…+49 Hz
 at 24 kHz. A 1024-entry Q15 sine table supplies complex rotation. The result
 feeds a 257-tap complex bandpass FIR, generated from a Blackman-windowed sinc
