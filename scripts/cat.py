@@ -10,7 +10,7 @@ def main():
     parser.add_argument('--port', help='explicit serial device path or COM port')
     parser.add_argument('--serial', help='USB receiver serial number')
     frequency = parser.add_mutually_exclusive_group()
-    frequency.add_argument('--frequency', '--fq', type=int, help='dial frequency in Hz, 150000..108000000')
+    frequency.add_argument('--frequency', '--fq', type=int, help='dial frequency in Hz, 70000..130000000 (experimental)')
     frequency.add_argument('--mhz', help='dial frequency in MHz, e.g. 14.074')
     parser.add_argument('--mode', type=str.upper, choices=['USB', 'LSB'])
     parser.add_argument('--retry', action='store_true', help='retry a faulted receiver configuration')
@@ -20,13 +20,13 @@ def main():
             hz = Decimal(args.mhz) * 1_000_000
             if not hz.is_finite() or hz != hz.to_integral_value():
                 raise ValueError('frequency must resolve to whole Hz')
-            if not 150000 <= hz <= 108000000:
-                raise ValueError('frequency must be between 0.15 and 108 MHz')
+            if not 70000 <= hz <= 130000000:
+                raise ValueError('frequency must be between 70 kHz and 130 MHz')
             args.frequency = int(hz)
         except (DecimalException, ValueError) as exc:
             parser.error(str(exc))
-    if args.frequency is not None and not 150000 <= args.frequency <= 108000000:
-        parser.error('frequency must be between 150000 and 108000000 Hz')
+    if args.frequency is not None and not 70000 <= args.frequency <= 130000000:
+        parser.error('frequency must be between 70000 and 130000000 Hz')
     if args.port and args.serial:
         parser.error('choose --port or --serial, not both')
     try:

@@ -30,11 +30,15 @@ defines the command framing and FA/MD/IF fields used by this subset.
 
 ## Frequency and failures
 
-The accepted range is 150,000–108,000,000 Hz in 1 Hz steps, with no claim of
-validated reception throughout that range. Nearest-100-Hz chip tuning plus
+The `vco-experiments` branch accepts 70,000–130,000,000 Hz in 1 Hz steps, with
+no claim of validated reception throughout that range. Nearest-100-Hz chip tuning plus
 an on-device NCO implements the requested dial. Crystal accuracy is not
 corrected automatically. Boot defaults to 14.200000 MHz USB and crystal trim
 code 8. Settings are volatile and not saved to flash.
+
+This branch forces the CMX918 HF LNA input by writing `$A2=0x02` after PLL/VCO
+calibration. The 70 kHz and 130 MHz endpoints are PLL/input-routing experiments;
+they are outside the published 150 kHz–108 MHz receiver specification.
 
 Setters acknowledge success by silence, following Kenwood convention. Send
 `FA;MD;ZZST;` after a setter to verify the applied state. Failed hardware writes,

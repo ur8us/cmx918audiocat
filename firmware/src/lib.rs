@@ -20,6 +20,8 @@ pub const EXPERIMENTAL_RF: u32 = 1;
 pub const UNQUALIFIED_RATE: u32 = 2;
 pub const SYNTHETIC: u32 = 4;
 pub const XTAL_TRIM: u32 = 8;
+pub const EXPERIMENTAL_MIN_HZ: u32 = 70_000;
+pub const EXPERIMENTAL_MAX_HZ: u32 = 130_000_000;
 
 /// PIO shifts MSB-first wire data (I high16, Q low16) into a u32.
 /// Capture stores each signed component little endian without changing any bits.
@@ -55,7 +57,8 @@ impl Config {
         if self.flags & !0xff != 0 || self.flags & 0xf0 != 0 && self.flags & XTAL_TRIM == 0 {
             return Err(Error::Protocol);
         }
-        if !self.frequency.is_multiple_of(100) || !(100_000..=130_000_000).contains(&self.frequency)
+        if !self.frequency.is_multiple_of(100)
+            || !(EXPERIMENTAL_MIN_HZ..=EXPERIMENTAL_MAX_HZ).contains(&self.frequency)
         {
             return Err(Error::Frequency);
         }
@@ -192,7 +195,7 @@ mod tests {
     #[test]
     fn frequency_boundaries_are_explicit() {
         assert_eq!(config().carrier(), [0x82, 0x2a, 0xb0]);
-        for frequency in [100_000, 149_900, 108_000_100, 130_000_000] {
+        for frequency in [70_000, 149_900, 108_000_100, 130_000_000] {
             let c = Config {
                 frequency,
                 ..config()
@@ -200,7 +203,7 @@ mod tests {
             assert_eq!(c.validate(), Err(Error::Frequency));
             assert!(Config { flags: 3, ..c }.validate().is_ok());
         }
-        for frequency in [99_900, 130_000_100, 1_234_567, u32::MAX] {
+        for frequency in [69_900, 130_000_100, 1_234_567, u32::MAX] {
             assert!(
                 Config {
                     frequency,

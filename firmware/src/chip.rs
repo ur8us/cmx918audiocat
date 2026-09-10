@@ -6,6 +6,9 @@ use crate::{Config, Error};
 use embedded_hal_async::{delay::DelayNs, i2c::I2c};
 
 pub const ADDRESS: u8 = 0x55;
+// UM918/2.0 p.65, $A2: RF_LNA_CTL_1. Bit 1 enables HF_IN; bit 0 enables
+// VHF_IN. This branch intentionally forces the HF path for every dial value.
+const FORCED_HF_INPUT: u8 = 0x02;
 // D/918/2.0 Table 5: first 16 FIR1 and first 40 FIR2 coefficients.
 const FIR: [i16; 56] = [
     -13, -137, -56, 573, -60, -1824, 1284, 8378, -61, -173, 249, 562, -1113, -1190, 4998, 9744, 28,
@@ -139,6 +142,12 @@ impl<I: I2c, D: DelayNs> Chip<I, D> {
         if !locked {
             return Err(Error::Timeout);
         }
+        // The normal-mode automatic policy selects LF/MF, HF, or VHF from Fc.
+        // Override that policy after PLL/VCO calibration for the VCO experiment.
+        self.write(0xa2, FORCED_HF_INPUT).await?;
+        if self.read(0xa2).await? != FORCED_HF_INPUT || self.read(0x06).await? & 8 == 0 {
+            return Err(Error::Readback);
+        }
         for (r, v) in [
             (8, fc[0]),
             (9, fc[1]),
@@ -149,6 +158,7 @@ impl<I: I2c, D: DelayNs> Chip<I, D> {
             (0x5b, 0x19),
             (0x5c, 0),
             (0x97, config.xtal_control()),
+            (0xa2, FORCED_HF_INPUT),
         ] {
             let actual = self.read(r).await?;
             if actual != v {
@@ -280,6 +290,7 @@ mod tests {
             );
             assert_eq!(writes.iter().filter(|(r, _)| *r == 0xd9).count(), 56);
             assert_eq!(chip.bus.regs[0x28], 0x9b);
+            assert_eq!(chip.bus.regs[0xa2], 0x02);
             chip.mute(false).await.unwrap();
             assert_eq!(chip.bus.regs[0x60], 0);
         });

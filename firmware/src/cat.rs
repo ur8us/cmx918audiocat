@@ -1,6 +1,9 @@
 //! Bounded Kenwood-style ASCII CAT subset. Frames end with ';', not USB packets.
 //! Wire reference: Kenwood TS-480 PC Control Command reference, FA/MD/IF.
-use crate::{Config, Error, UNQUALIFIED_RATE, XTAL_TRIM};
+use crate::{
+    Config, EXPERIMENTAL_MAX_HZ, EXPERIMENTAL_MIN_HZ, EXPERIMENTAL_RF, Error, UNQUALIFIED_RATE,
+    XTAL_TRIM,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
@@ -34,7 +37,7 @@ impl Tuning {
             frequency: self.coarse_frequency(),
             rate: 24_000,
             bandwidth: 10_000,
-            flags: UNQUALIFIED_RATE | XTAL_TRIM | (8 << 4),
+            flags: EXPERIMENTAL_RF | UNQUALIFIED_RATE | XTAL_TRIM | (8 << 4),
         }
     }
 }
@@ -75,7 +78,7 @@ pub fn parse(bytes: &[u8]) -> Result<Command, Error> {
                     .and_then(|v| v.checked_add(u32::from(digit - b'0')))
                     .ok_or(Error::Frequency)?;
             }
-            if !(150_000..=108_000_000).contains(&value) {
+            if !(EXPERIMENTAL_MIN_HZ..=EXPERIMENTAL_MAX_HZ).contains(&value) {
                 return Err(Error::Frequency);
             }
             Ok(Command::Frequency(Some(value)))
@@ -213,15 +216,15 @@ mod tests {
             b"MD5",
             b"TX",
             b"FA99999999999",
-            b"FA00108000001",
-            b"FA00000149999",
+            b"FA01300000001",
+            b"FA00000069999",
             b"FA00014200a00",
             b"FA14200000",
             b"AI1",
         ] {
             assert!(parse(b).is_err(), "{b:?}");
         }
-        for value in [150_000, 14_200_049, 108_000_000] {
+        for value in [70_000, 14_200_049, 130_000_000] {
             let t = Tuning {
                 frequency: value,
                 ..Tuning::default()

@@ -22,7 +22,7 @@ orientation must be rechecked on the actual board, including below 2 MHz
 where the driver changes LO injection. Wrong orientation exchanges USB/LSB.
 No undocumented conjugation correction has been assumed.
 
-The dial accepts 1 Hz steps over 150 kHz–108 MHz. The chip tunes to the nearest
+The `vco-experiments` branch accepts 1 Hz steps over 70 kHz–130 MHz. The chip tunes to the nearest
 100 Hz; a 32-bit phase accumulator translates by the remaining −50…+49 Hz
 at 24 kHz. A 1024-entry Q15 sine table supplies complex rotation. The result
 feeds a 257-tap complex bandpass FIR, generated from a Blackman-windowed sinc
