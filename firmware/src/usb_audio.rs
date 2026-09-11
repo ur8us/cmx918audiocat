@@ -102,10 +102,13 @@ pub fn microphone<'d, D: Driver<'d>>(
     let mut interface = function.interface();
     let streaming = u8::from(interface.interface_number()) + 1;
     let mut alt = interface.alt_setting(1, 1, 0, None);
-    // AC header (9) + radio receiver input terminal (12) + USB output terminal (9).
+    // AC header (9) + line input terminal (12) + USB output terminal (9).
     alt.descriptor(0x24, &[1, 0, 1, 30, 0, 1, streaming]);
-    // Radio receiver input terminal type 0x0710, mono, unspecified spatial position.
-    alt.descriptor(0x24, &[2, 1, 0x10, 0x07, 0, 1, 0, 0, 0, 0]);
+    // Present demodulated radio audio as Line Connector (USB terminal 0x0603).
+    // Windows creates Radio Receiver (0x0710) endpoints disabled and hidden;
+    // Line Connector is exempt from that policy. This is a host audio category,
+    // not an extra physical line input. See docs/WINDOWS-AUDIO.md for sources.
+    alt.descriptor(0x24, &[2, 1, 0x03, 0x06, 0, 1, 0, 0, 0, 0]);
     alt.descriptor(0x24, &[3, 2, 0x01, 0x01, 0, 1, 0]);
     let mut interface = function.interface();
     let streaming_number = interface.interface_number();

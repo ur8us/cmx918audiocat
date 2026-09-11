@@ -53,6 +53,10 @@ CDC should appear as `/dev/ttyACM*` on Linux, a COM port on Windows, or
 interoperability has not yet been measured. Linux serial access normally
 requires the distribution's serial-device group (often `dialout`).
 
+On Windows the recording endpoint may be labelled **Line In (CMX918 Audio CAT
+Receiver)**. If Device Manager detects the receiver but recording applications
+cannot see it, see [Windows endpoint setup and the terminal-type fix](docs/WINDOWS-AUDIO.md).
+
 Install pyserial into your Python environment to use the supplied CAT helper:
 
 ```sh

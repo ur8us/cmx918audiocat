@@ -164,7 +164,19 @@ fn composite_topology_rate_controls_and_lifecycle() {
         ]
     );
     assert!(descriptors.contains(&&[9, 0x24, 1, 0, 1, 30, 0, 1, 1][..]));
-    assert!(descriptors.contains(&&[12, 0x24, 2, 1, 0x10, 7, 0, 1, 0, 0, 0, 0][..]));
+    let input_terminal = descriptors
+        .iter()
+        .find(|d| d.len() == 12 && d[1..3] == [0x24, 2])
+        .expect("audio input terminal");
+    assert_eq!(input_terminal[3], 1); // source referenced by USB output terminal 2
+    // Windows hides embedded Radio Receiver (0x0710) endpoints by default.
+    // Line Connector maps to the normally enabled KSNODETYPE_LINE_CONNECTOR.
+    assert_eq!(
+        u16::from_le_bytes([input_terminal[4], input_terminal[5]]),
+        0x0603,
+        "use a visible Windows line-input endpoint, not an embedded radio terminal"
+    );
+    assert_eq!(&input_terminal[6..], &[0, 1, 0, 0, 0, 0]); // unassociated mono input
     assert!(descriptors.contains(&&[9, 0x24, 3, 2, 1, 1, 0, 1, 0][..]));
     assert!(descriptors.contains(&&[11, 0x24, 2, 1, 1, 2, 16, 1, 0xe0, 0x2e, 0][..]));
     assert!(descriptors.contains(&&[9, 5, 0x81, 5, 26, 0, 1, 0, 0][..]));
